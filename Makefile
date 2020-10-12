@@ -28,7 +28,7 @@ cscope.out: *.cpp *.h
 
 .PHONY: check
 check:
-	cppcheck --enable=all .
+	cppcheck --check-config --enable=all .
 
 .PHONY: clean
 clean:
