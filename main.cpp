@@ -48,35 +48,58 @@ int main()
    // whether to do virtual to physical translation,
    // and number of caches/domains
    // WARNING: counting compulsory misses doubles execution time
-   MultiCacheSystem sys(tid_map, 64, 1024, 64, std::move(prefetch), false, false, 2);
+   MultiCacheSystem sys(tid_map, 64, 1024, 64, std::move(prefetch), false, true, 1);
    char rw;
+   string line;
+   string header, load_store, state;
+   string mem_access = "guest_mem_access_tlb";
+   uint64_t vaddr, paddr;
    uint64_t address;
    unsigned long long lines = 0;
    ifstream infile;
    // This code works with the output from the 
    // ManualExamples/pinatrace pin tool
-   infile.open("pinatrace.out", ifstream::in);
+   // infile.open("pinatrace.out", ifstream::in);
+   infile.open("nokvm-2020-10-19_-_21-38.log", ifstream::in);
    assert(infile.is_open());
 
-   while(!infile.eof())
+   while(std::getline(infile, line))
    {
-      infile.ignore(256, ':');
+      infile >> header;
+      size_t find = header.find(mem_access);
+      std::cout << lines << std::endl;
+      //std::cout << header << header.length() << lines << std::endl;
+      //printf("%s %d\n", line, lines);
+      if(find != std::string::npos){
+         // load or store
+         infile >> load_store;
+         AccessType accessType;
+         //std::cout << load_store.at(load_store.length() - 2) << std::endl;
+         if (load_store.at(load_store.length() - 2) == '0') {
+            accessType = AccessType::Read;
+         } else {
+            accessType = AccessType::Write;
+         }
 
-      infile >> rw;
-      assert(rw == 'R' || rw == 'W');
-      AccessType accessType;
-      if (rw == 'R') {
-         accessType = AccessType::Read;
+         // state
+         infile >> state;
+         //std::cout << state << std::endl;
+
+         // virtual address, physical address
+         infile >> hex >> vaddr;
+         infile >> hex >> paddr;
+
+         if(vaddr != 0) {
+            // By default the pinatrace tool doesn't record the tid,
+            // so we make up a tid to stress the MultiCache functionality
+            // sys.memAccess(address, accessType, lines%2);
+            sys.memAccess(vaddr, accessType, 0);
+         }
       } else {
-         accessType = AccessType::Write;
+         // setup tlb
+         continue;
       }
 
-      infile >> hex >> address;
-      if(address != 0) {
-         // By default the pinatrace tool doesn't record the tid,
-         // so we make up a tid to stress the MultiCache functionality
-         sys.memAccess(address, accessType, lines%2);
-      }
 
       ++lines;
    }
