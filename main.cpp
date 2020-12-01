@@ -48,26 +48,28 @@ int main()
    // whether to do virtual to physical translation,
    // and number of caches/domains
    // WARNING: counting compulsory misses doubles execution time
-   MultiCacheSystem sys(tid_map, 64, 1024, 64, std::move(prefetch), false, true, 1);
+   MultiCacheSystem sys(tid_map, 64, 4096, 8, std::move(prefetch), false, true, 1);
    char rw;
    string line;
    string header, load_store, state;
    string mem_access = "guest_mem_access_tlb";
+   string user_mode = "0x3";
    uint64_t vaddr, paddr;
    uint64_t address;
    unsigned long long lines = 0;
+   unsigned long long user_access = 0;
    ifstream infile;
    // This code works with the output from the 
    // ManualExamples/pinatrace pin tool
    // infile.open("pinatrace.out", ifstream::in);
-   infile.open("nokvm-2020-10-19_-_21-38.log", ifstream::in);
+   infile.open("../qemu-trace/nokvm-2020-12-01_-_03-59.log", ifstream::in);
    assert(infile.is_open());
 
    while(std::getline(infile, line))
    {
       infile >> header;
       size_t find = header.find(mem_access);
-      std::cout << lines << std::endl;
+      //std::cout << lines << std::endl;
       //std::cout << header << header.length() << lines << std::endl;
       //printf("%s %d\n", line, lines);
       if(find != std::string::npos){
@@ -83,6 +85,10 @@ int main()
 
          // state
          infile >> state;
+         find = state.find(user_mode);
+         if(find != std::string::npos){
+             user_access++;
+         }
          //std::cout << state << std::endl;
 
          // virtual address, physical address
@@ -102,11 +108,17 @@ int main()
 
 
       ++lines;
+      if((lines % 1000000) == 1){
+          cout<<lines<<endl;
+      }
    }
 
    cout << "Accesses: " << lines << endl;
    cout << "Hits: " << sys.stats.hits << endl;
    cout << "Misses: " << lines - sys.stats.hits << endl;
+   cout << "Hit rate: " << 1.0 * sys.stats.hits / lines << endl;
+   cout << "User accesses: " << user_access << endl;
+   cout << "User rate: " << 1.0 * user_access / lines << endl;
    cout << "Local reads: " << sys.stats.local_reads << endl;
    cout << "Local writes: " << sys.stats.local_writes << endl;
    cout << "Remote reads: " << sys.stats.remote_reads << endl;

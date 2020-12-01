@@ -1,6 +1,6 @@
 CXX = g++
-DEBUG_FLAGS = -O2 -g -Wall -Wextra -DDEBUG -std=gnu++14
-RELEASE_FLAGS= -O3 -march=native -Wall -Wextra -std=gnu++14 -flto -static
+DEBUG_FLAGS = -O2 -g -Wall -Wextra -DDEBUG -std=c++11
+RELEASE_FLAGS= -O3 -march=native -Wall -Wextra -std=c++11 -flto -static
 CXXFLAGS=$(RELEASE_FLAGS)
 DEPS=$(wildcard *.h) Makefile
 OBJ=system.o cache.o prefetch.o
